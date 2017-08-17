@@ -6,8 +6,45 @@
  */ 
 
 #include <avr/io.h>
+#include <util/delay.h>
 
+// Voltage Reference: AVCC pin
+#define ADC_VREF_TYPE ((0<<REFS1) | (1<<REFS0) | (0<<ADLAR))
 
+enum {btnRIGHT, btnUP, btnDOWN, btnLEFT, btnSELECT, btnNONE};
+	
+// Read the AD conversion result
+unsigned int read_adc(unsigned char adc_input)
+	{
+		ADMUX=adc_input | ADC_VREF_TYPE;
+		// Delay needed for the stabilization of the ADC input voltage
+		_delay_us(10);
+		// Start the AD conversion
+		ADCSRA|=(1<<ADSC);
+		// Wait for the AD conversion to complete
+		while ((ADCSRA & (1<<ADIF))==0);
+		ADCSRA|=(1<<ADIF);
+		return ADCW;
+	}
+
+// read the buttons
+int read_LCD_buttons()
+	{
+		int adc_key_in  = 0;
+		adc_key_in = read_adc(0);      // read the value from the sensor 
+		// my buttons when read are centered at these valies: 0, 144, 329, 504, 741
+		// we add approx 50 to those values and check to see if we are close
+		if (adc_key_in > 1000) return btnNONE; // We make this the 1st option for speed reasons since it will be the most likely result
+		// For V1.1 us this threshold
+		if (adc_key_in < 50)   return btnRIGHT;  
+		if (adc_key_in < 250)  return btnUP; 
+		if (adc_key_in < 450)  return btnDOWN; 
+		if (adc_key_in < 650)  return btnLEFT; 
+		if (adc_key_in < 850)  return btnSELECT;  
+
+		return btnNONE;  // when all others fail, return this...
+	}
+	
 int main(void)
 	{
 		// Input/Output Ports initialization
@@ -113,8 +150,15 @@ int main(void)
 		DIDR1=(0<<AIN0D) | (0<<AIN1D);
 
 		// ADC initialization
-		// ADC disabled
-		ADCSRA=(0<<ADEN) | (0<<ADSC) | (0<<ADATE) | (0<<ADIF) | (0<<ADIE) | (0<<ADPS2) | (0<<ADPS1) | (0<<ADPS0);
+		// ADC Clock frequency: 1000.000 kHz
+		// ADC Voltage Reference: AVCC pin
+		// ADC Auto Trigger Source: ADC Stopped
+		// Digital input buffers on ADC0: On, ADC1: On, ADC2: On, ADC3: On
+		// ADC4: On, ADC5: On
+		DIDR0=(0<<ADC5D) | (0<<ADC4D) | (0<<ADC3D) | (0<<ADC2D) | (0<<ADC1D) | (0<<ADC0D);
+		ADMUX=ADC_VREF_TYPE;
+		ADCSRA=(1<<ADEN) | (0<<ADSC) | (0<<ADATE) | (0<<ADIF) | (0<<ADIE) | (1<<ADPS2) | (0<<ADPS1) | (0<<ADPS0);
+		ADCSRB=(0<<ADTS2) | (0<<ADTS1) | (0<<ADTS0);
 
 		// SPI initialization
 		// SPI disabled
@@ -126,6 +170,42 @@ int main(void)
     
 		while (1) 
 			{
+				DDRD=0xFF;
+				switch (read_LCD_buttons())               // depending on which button was pushed, we perform an action
+				{
+					case btnRIGHT:
+					{
+						PORTD=btnRIGHT;
+						break;
+					}
+					case btnLEFT:
+					{
+						PORTD=btnLEFT;
+						break;
+					}
+					case btnUP:
+					{
+						PORTD=btnUP;
+						break;
+					}
+					case btnDOWN:
+					{
+						PORTD=btnDOWN;
+						break;
+					}
+					case btnSELECT:
+					{
+						PORTD=btnSELECT;
+						break;
+					}
+					case btnNONE:
+					{
+						PORTD=btnNONE;
+						break;
+					}
+					
+					_delay_ms(250);
+				}
 			}
 	}
 	

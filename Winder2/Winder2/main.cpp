@@ -15,7 +15,9 @@
 
 enum {btnRIGHT, btnUP, btnDOWN, btnLEFT, btnSELECT, btnNONE};
 	
-char buffer [50];	
+char buffer [50];
+char X0[] = " Start";
+char X1[] = " Settings";	
 	
 // Read the AD conversion result
 unsigned int read_adc(unsigned char adc_input)
@@ -176,8 +178,38 @@ int main(void)
 		//************ SETARILE DE CONECTARE A LCD SUNT IN FISIERUL hd44780_setings.h *******************//
 		DDRD=0xFF;	// LCD este conectat la Portul D
 		lcd_init();
-		lcd_puts("Hello");
-		_delay_ms(50);
+		lcd_puts("WinderMachineV.2");
+		_delay_ms(100);
+		lcd_clrscr();
+		
+		int Button = btnNONE;
+		lcd_goto(0);
+		lcd_puts(">");
+		lcd_goto(1);
+		lcd_puts(X0);
+		lcd_goto(65);
+		lcd_puts(X1);
+		do
+			{
+				Button = read_LCD_buttons();
+				if(Button == btnDOWN)
+					{
+						lcd_goto(0);
+						lcd_puts(" ");
+						lcd_goto(64);
+						lcd_puts(">");
+					}
+				if(Button == btnUP)
+					{
+						lcd_goto(64);
+						lcd_puts(" ");
+						lcd_goto(0);
+						lcd_puts(">");
+					}
+				_delay_ms(10);
+			}
+		while(Button != btnRIGHT && Button != btnSELECT);
+		lcd_clrscr();
 		
 		while (1) 
 			{

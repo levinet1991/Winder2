@@ -7,11 +7,15 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
+#include <stdio.h>		// pentru a putea utiliza functia sprintf
+#include "hd44780.c"	// libraria LCD
 
 // Voltage Reference: AVCC pin
 #define ADC_VREF_TYPE ((0<<REFS1) | (1<<REFS0) | (0<<ADLAR))
 
 enum {btnRIGHT, btnUP, btnDOWN, btnLEFT, btnSELECT, btnNONE};
+	
+char buffer [50];	
 	
 // Read the AD conversion result
 unsigned int read_adc(unsigned char adc_input)
@@ -168,44 +172,52 @@ int main(void)
 		// TWI disabled
 		TWCR=(0<<TWEA) | (0<<TWSTA) | (0<<TWSTO) | (0<<TWEN) | (0<<TWIE);
     
+		//===================================== LCD =====================================================//
+		//************ SETARILE DE CONECTARE A LCD SUNT IN FISIERUL hd44780_setings.h *******************//
+		DDRD=0xFF;	// LCD este conectat la Portul D
+		lcd_init();
+		lcd_puts("Hello");
+		_delay_ms(50);
+		
 		while (1) 
 			{
-				DDRD=0xFF;
+				lcd_clrscr();
 				switch (read_LCD_buttons())               // depending on which button was pushed, we perform an action
-				{
-					case btnRIGHT:
 					{
-						PORTD=btnRIGHT;
-						break;
-					}
-					case btnLEFT:
-					{
-						PORTD=btnLEFT;
-						break;
-					}
-					case btnUP:
-					{
-						PORTD=btnUP;
-						break;
-					}
-					case btnDOWN:
-					{
-						PORTD=btnDOWN;
-						break;
-					}
-					case btnSELECT:
-					{
-						PORTD=btnSELECT;
-						break;
-					}
-					case btnNONE:
-					{
-						PORTD=btnNONE;
-						break;
-					}
-					
-					_delay_ms(250);
-				}
+						case btnRIGHT:
+							{
+								sprintf(buffer,"Butonul = %d", btnRIGHT);
+								break;
+							}
+						case btnLEFT:
+							{
+								sprintf(buffer,"Butonul = %d", btnLEFT);
+								break;
+							}
+						case btnUP:
+							{
+								sprintf(buffer,"Butonul = %d", btnUP);
+								break;
+							}
+						case btnDOWN:
+							{
+								sprintf(buffer,"Butonul = %d", btnDOWN);
+								break;
+							}
+						case btnSELECT:
+							{
+								sprintf(buffer,"Butonul = %d", btnSELECT);
+								break;
+							}
+						case btnNONE:
+							{
+								sprintf(buffer,"Butonul = %d", btnNONE);
+								break;
+							}
+					}	
+				lcd_puts(buffer);	
+				_delay_ms(5);
+			
 			}
 	}
 	

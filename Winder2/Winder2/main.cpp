@@ -12,13 +12,15 @@
 
 // Voltage Reference: AVCC pin
 #define ADC_VREF_TYPE ((0<<REFS1) | (1<<REFS0) | (0<<ADLAR))
+#define Inceputul_liniei_1 0
+#define Inceputul_liniei_2 64
 
 enum {btnRIGHT, btnUP, btnDOWN, btnLEFT, btnSELECT, btnNONE};
 	
 char buffer [50];
-char X0[] = " Start";
-char X1[] = " Settings";	
-	
+uint8_t pozitia_cursor=0, imaginea=0;
+uint8_t Button = btnNONE;	
+
 // Read the AD conversion result
 unsigned int read_adc(unsigned char adc_input)
 	{
@@ -51,6 +53,140 @@ int read_LCD_buttons()
 		return btnNONE;  // when all others fail, return this...
 	}
 	
+void Afisare(int Cursor, char* Date_Afisare)
+	{
+		lcd_goto(Cursor);
+		lcd_puts(Date_Afisare);
+	}	
+
+inline void MeniulInitializare()
+	{
+		lcd_clrscr();
+		lcd_puts("WinderMachineV.2");
+	}
+inline void MeniulPrincipal()
+	{
+		bool Eliberare_Buton=false;
+		lcd_clrscr();
+		Afisare(Inceputul_liniei_1, ">");
+		Afisare(Inceputul_liniei_1+2, "Start");
+		Afisare(Inceputul_liniei_2+2, "Settings");
+		do
+			{
+				do
+					{
+						do
+							{
+								Button = read_LCD_buttons();
+								if(Button==btnNONE)
+									Eliberare_Buton=false;
+							}while(Button != btnNONE && Eliberare_Buton == true);
+
+						_delay_ms(10);
+					}while(Button == btnNONE);
+				
+				Eliberare_Buton=true;
+				if(Button == btnDOWN)
+					{
+						Afisare(Inceputul_liniei_1, " ");
+						Afisare(Inceputul_liniei_2, ">");
+						pozitia_cursor=1;
+					}
+				if(Button == btnUP)
+					{
+						Afisare(Inceputul_liniei_1, ">");
+						Afisare(Inceputul_liniei_2, " ");
+						pozitia_cursor=0;
+					}
+			}while(Button != btnRIGHT && Button != btnSELECT);
+	}
+inline void MeniulSecundar()
+{
+	lcd_clrscr();
+
+	Button = btnNONE;
+	pozitia_cursor=0;
+	do
+	{
+		Button = read_LCD_buttons();
+		if(Button == btnDOWN)
+		{
+			if(pozitia_cursor==0)
+			pozitia_cursor++;
+			else
+			if(imaginea<3)
+			imaginea++;
+		}
+		if(Button == btnUP)
+		{
+			if(pozitia_cursor==1)
+			pozitia_cursor--;
+			else
+			if(imaginea>0)
+			imaginea--;
+		}
+		
+		lcd_clrscr();
+		if(pozitia_cursor==0)
+		{
+			Afisare(Inceputul_liniei_1, ">");
+			Afisare(Inceputul_liniei_2, " ");
+		}
+		else
+		{
+			Afisare(Inceputul_liniei_1, " ");
+			Afisare(Inceputul_liniei_2, ">");
+		}
+		
+		switch(imaginea)
+		{
+			case 0:
+			{
+				sprintf(buffer, "Diam.s=");
+				Afisare(Inceputul_liniei_1+2, buffer);
+				sprintf(buffer, "Lung.b=");
+				Afisare(Inceputul_liniei_2+2, buffer);
+				break;
+			}
+			case 1:
+			{
+				sprintf(buffer, "Lung.b=");
+				Afisare(Inceputul_liniei_1+2, buffer);
+				sprintf(buffer, "Nr.spire=");
+				Afisare(Inceputul_liniei_2+2, buffer);
+				break;
+			}
+			case 2:
+			{
+				sprintf(buffer, "Nr.spire=");
+				Afisare(Inceputul_liniei_1+2, buffer);
+				sprintf(buffer, "Coef.d=");
+				Afisare(Inceputul_liniei_2+2, buffer);
+				break;
+			}
+			case 3:
+			{
+				sprintf(buffer, "Coef.d=");
+				Afisare(Inceputul_liniei_1+2, buffer);
+				sprintf(buffer, "Bobin/s=");
+				Afisare(Inceputul_liniei_2+2, buffer);
+				break;
+			}
+		}
+		do
+		{
+			Button = read_LCD_buttons();
+			_delay_ms(1);
+		}
+		while(Button != btnNONE);
+		
+	}
+	while (Button != btnRIGHT && Button != btnSELECT);
+	lcd_clrscr();
+	_delay_ms(400);
+
+
+}	
 int main(void)
 	{
 		// Input/Output Ports initialization
@@ -177,39 +313,15 @@ int main(void)
 		//===================================== LCD =====================================================//
 		//************ SETARILE DE CONECTARE A LCD SUNT IN FISIERUL hd44780_setings.h *******************//
 		DDRD=0xFF;	// LCD este conectat la Portul D
+		//***********************************************************************************************//
 		lcd_init();
-		lcd_puts("WinderMachineV.2");
-		_delay_ms(100);
-		lcd_clrscr();
+
+		MeniulInitializare();
+		_delay_ms(10);
+		MeniulPrincipal();
+		MeniulSecundar();
 		
-		int Button = btnNONE;
-		lcd_goto(0);
-		lcd_puts(">");
-		lcd_goto(1);
-		lcd_puts(X0);
-		lcd_goto(65);
-		lcd_puts(X1);
-		do
-			{
-				Button = read_LCD_buttons();
-				if(Button == btnDOWN)
-					{
-						lcd_goto(0);
-						lcd_puts(" ");
-						lcd_goto(64);
-						lcd_puts(">");
-					}
-				if(Button == btnUP)
-					{
-						lcd_goto(64);
-						lcd_puts(" ");
-						lcd_goto(0);
-						lcd_puts(">");
-					}
-				_delay_ms(10);
-			}
-		while(Button != btnRIGHT && Button != btnSELECT);
-		lcd_clrscr();
+		
 		
 		while (1) 
 			{

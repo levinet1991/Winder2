@@ -20,6 +20,8 @@ enum {btnRIGHT, btnUP, btnDOWN, btnLEFT, btnSELECT, btnNONE};
 char buffer [50];
 uint8_t pozitia_cursor=0, imaginea=0;
 uint8_t Button = btnNONE;	
+unsigned long int Lungimea_bobinei=300, Nr_spire=4532;
+double Diametrul_sarmei=0.0012, Coef_deplasare=1, Nr_bobinarisecunda=0.5;
 
 // Read the AD conversion result
 unsigned int read_adc(unsigned char adc_input)
@@ -80,113 +82,177 @@ inline void MeniulPrincipal()
 								Button = read_LCD_buttons();
 								if(Button==btnNONE)
 									Eliberare_Buton=false;
+								_delay_ms(10);
 							}while(Button != btnNONE && Eliberare_Buton == true);
-
-						_delay_ms(10);
 					}while(Button == btnNONE);
 				
 				Eliberare_Buton=true;
 				if(Button == btnDOWN)
 					{
-						Afisare(Inceputul_liniei_1, " ");
-						Afisare(Inceputul_liniei_2, ">");
-						pozitia_cursor=1;
+						if(pozitia_cursor != 1)
+							{
+								pozitia_cursor=1;
+								Afisare(Inceputul_liniei_1, " ");
+								Afisare(Inceputul_liniei_2, ">");
+							}
 					}
 				if(Button == btnUP)
 					{
-						Afisare(Inceputul_liniei_1, ">");
-						Afisare(Inceputul_liniei_2, " ");
-						pozitia_cursor=0;
+						if(pozitia_cursor != 0)
+							{
+								pozitia_cursor=0;
+								Afisare(Inceputul_liniei_1, ">");
+								Afisare(Inceputul_liniei_2, " ");
+							}
 					}
 			}while(Button != btnRIGHT && Button != btnSELECT);
 	}
-inline void MeniulSecundar()
-{
-	lcd_clrscr();
-
-	Button = btnNONE;
-	pozitia_cursor=0;
-	do
+	
+inline void MeniulSecundarStart()
 	{
-		Button = read_LCD_buttons();
-		if(Button == btnDOWN)
-		{
-			if(pozitia_cursor==0)
-			pozitia_cursor++;
-			else
-			if(imaginea<3)
-			imaginea++;
-		}
-		if(Button == btnUP)
-		{
-			if(pozitia_cursor==1)
-			pozitia_cursor--;
-			else
-			if(imaginea>0)
-			imaginea--;
-		}
-		
 		lcd_clrscr();
-		if(pozitia_cursor==0)
-		{
-			Afisare(Inceputul_liniei_1, ">");
-			Afisare(Inceputul_liniei_2, " ");
-		}
-		else
-		{
-			Afisare(Inceputul_liniei_1, " ");
-			Afisare(Inceputul_liniei_2, ">");
-		}
-		
-		switch(imaginea)
-		{
-			case 0:
-			{
-				sprintf(buffer, "Diam.s=");
-				Afisare(Inceputul_liniei_1+2, buffer);
-				sprintf(buffer, "Lung.b=");
-				Afisare(Inceputul_liniei_2+2, buffer);
-				break;
-			}
-			case 1:
-			{
-				sprintf(buffer, "Lung.b=");
-				Afisare(Inceputul_liniei_1+2, buffer);
-				sprintf(buffer, "Nr.spire=");
-				Afisare(Inceputul_liniei_2+2, buffer);
-				break;
-			}
-			case 2:
-			{
-				sprintf(buffer, "Nr.spire=");
-				Afisare(Inceputul_liniei_1+2, buffer);
-				sprintf(buffer, "Coef.d=");
-				Afisare(Inceputul_liniei_2+2, buffer);
-				break;
-			}
-			case 3:
-			{
-				sprintf(buffer, "Coef.d=");
-				Afisare(Inceputul_liniei_1+2, buffer);
-				sprintf(buffer, "Bobin/s=");
-				Afisare(Inceputul_liniei_2+2, buffer);
-				break;
-			}
-		}
-		do
-		{
-			Button = read_LCD_buttons();
-			_delay_ms(1);
-		}
-		while(Button != btnNONE);
-		
+		Afisare(Inceputul_liniei_1, "start");
 	}
-	while (Button != btnRIGHT && Button != btnSELECT);
-	lcd_clrscr();
-	_delay_ms(400);
 
-
+inline void MeniulSecundarSetting()
+	{
+		bool Eliberare_Buton=true;
+		bool Afisare_LCD=true;
+		pozitia_cursor=0;
+		do
+			{
+				if(Afisare_LCD == true)
+					{
+						lcd_clrscr();
+						if(pozitia_cursor==0)
+							{
+								Afisare(Inceputul_liniei_1, ">");
+								Afisare(Inceputul_liniei_2, " ");
+							}
+						else
+							{
+								Afisare(Inceputul_liniei_1, " ");
+								Afisare(Inceputul_liniei_2, ">");
+							}
+				
+						switch(imaginea)
+							{
+								case 0:
+									{
+										sprintf(buffer, "D.fir=%.4fmm", Diametrul_sarmei);
+										Afisare(Inceputul_liniei_1+2, buffer);
+										sprintf(buffer, "Lung.bob=%lumm", Lungimea_bobinei);
+										Afisare(Inceputul_liniei_2+2, buffer);
+										break;
+									}
+								case 1:
+									{
+										sprintf(buffer, "Lung.bob=%lumm", Lungimea_bobinei);
+										Afisare(Inceputul_liniei_1+2, buffer);
+										sprintf(buffer, "Nr.sp=%lu", Nr_spire);
+										Afisare(Inceputul_liniei_2+2, buffer);
+										break;
+									}
+								case 2:
+									{
+										sprintf(buffer, "Nr.sp=%lu", Nr_spire);
+										Afisare(Inceputul_liniei_1+2, buffer);
+										sprintf(buffer, "Coef.dp=%.2fmm", Coef_deplasare);
+										Afisare(Inceputul_liniei_2+2, buffer);
+										break;
+									}
+								case 3:
+									{
+										sprintf(buffer, "Coef.dp=%.2fmm", Coef_deplasare);
+										Afisare(Inceputul_liniei_1+2, buffer);
+										sprintf(buffer, "NrBobin/s=%.2f", Nr_bobinarisecunda);
+										Afisare(Inceputul_liniei_2+2, buffer);
+										break;
+									}
+							}
+					}
+				
+				do
+					{
+						do
+							{
+								Button = read_LCD_buttons();
+								if(Button==btnNONE)
+									Eliberare_Buton=false;
+								_delay_ms(10);
+							}while(Button != btnNONE && Eliberare_Buton == true);
+					}while(Button == btnNONE);
+				Eliberare_Buton=true;
+				Afisare_LCD=true;
+				if(Button == btnDOWN)
+					{
+						if(pozitia_cursor==0)
+							pozitia_cursor++;
+						else
+							if(imaginea<3)
+								imaginea++;
+							else 
+								Afisare_LCD=false;
+					}
+				if(Button == btnUP)
+					{
+						if(pozitia_cursor==1)
+							pozitia_cursor--;
+						else
+							if(imaginea>0)
+								imaginea--;
+							else
+								Afisare_LCD=false;
+					}
+				if(Button == btnRIGHT)
+					{
+						if(imaginea==0&&pozitia_cursor==0)
+							{
+								Diametrul_sarmei = Diametrul_sarmei+0.0001;	
+							}
+						if((imaginea==0&&pozitia_cursor==1) || (imaginea==1&&pozitia_cursor==0))
+							{
+								Lungimea_bobinei = Lungimea_bobinei+1;
+							}
+						if((imaginea==1&&pozitia_cursor==1) || (imaginea==2&&pozitia_cursor==0))
+							{
+								Nr_spire = Nr_spire+1;
+							}
+						if((imaginea==2&&pozitia_cursor==1) || (imaginea==3&&pozitia_cursor==0))
+							{
+								Coef_deplasare = Coef_deplasare + 0.01;
+							}
+						if(imaginea==3&&pozitia_cursor==1)
+							{
+								Nr_bobinarisecunda = Nr_bobinarisecunda + 0.01;
+							}	
+					}
+				if(Button == btnLEFT)
+					{
+						if(imaginea==0&&pozitia_cursor==0)
+						{
+							Diametrul_sarmei = Diametrul_sarmei - 0.0001;
+						}
+						if((imaginea==0&&pozitia_cursor==1) || (imaginea==1&&pozitia_cursor==0))
+						{
+							Lungimea_bobinei = Lungimea_bobinei - 1;
+						}
+						if((imaginea==1&&pozitia_cursor==1) || (imaginea==2&&pozitia_cursor==0))
+						{
+							Nr_spire = Nr_spire - 1;
+						}
+						if((imaginea==2&&pozitia_cursor==1) || (imaginea==3&&pozitia_cursor==0))
+						{
+							Coef_deplasare = Coef_deplasare - 0.01;
+						}
+						if(imaginea==3&&pozitia_cursor==1)
+						{
+							Nr_bobinarisecunda = Nr_bobinarisecunda - 0.01;
+						}
+					}
+			}while(Button != btnSELECT);
 }	
+
 int main(void)
 	{
 		// Input/Output Ports initialization
@@ -319,7 +385,13 @@ int main(void)
 		MeniulInitializare();
 		_delay_ms(10);
 		MeniulPrincipal();
-		MeniulSecundar();
+		if(pozitia_cursor == 0)
+			{
+				MeniulSecundarStart();
+				_delay_ms(400);
+			}
+		else
+			MeniulSecundarSetting();
 		
 		
 		
